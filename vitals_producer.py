@@ -3,6 +3,10 @@ import time
 import random
 from faker import Faker
 from kafka import KafkaProducer
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Configuration from environment variables
 KAFKA_BROKER = os.environ.get('KAFKA_BROKER')
@@ -43,6 +47,17 @@ def generate_vitals():
 if __name__ == '__main__':
     while True:
         vitals_data = generate_vitals()
+        
+        # Check for critical vitals
+        if vitals_data['heart_rate'] < 50:
+            logging.warning(f"CRITICAL: Low heart rate: {vitals_data['heart_rate']}")
+            warning_message = f"CRITICAL: Low heart rate: {vitals_data['heart_rate']}"
+            producer.send(KAFKA_TOPIC, warning_message.encode('utf-8'))
+        if vitals_data['oxygen_saturation'] < 92:
+            logging.warning(f"CRITICAL: Low oxygen saturation: {vitals_data['oxygen_saturation']}")
+            warning_message = f"CRITICAL: Low oxygen saturation: {vitals_data['oxygen_saturation']}"
+            producer.send(KAFKA_TOPIC, warning_message.encode('utf-8'))
+
         # Serialize vitals data to JSON (or string)
         message = str(vitals_data).encode('utf-8')
         # Send message to Kafka topic
